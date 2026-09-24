@@ -1,0 +1,82 @@
+gcp:
+  project_id: "fraud-detection-kanchan"
+  region: "us-central1"
+  zone: "us-central1-a"
+
+storage:
+  bucket_name: "fraud-detection-kanchan"
+  training_data_path: "data/training/"
+  model_artifacts_path: "models/"
+  temp_location: "temp/dataflow/"
+
+bigquery:
+  dataset_id: "fraud_detection"
+  training_table: "transactions_training"
+  predictions_table: "fraud_predictions"
+  monitoring_table: "feature_stats"
+
+pubsub:
+  topic_id: "fraud-transactions"
+  subscription_id: "fraud-pipeline-sub"
+  dead_letter_topic: "fraud-dead-letter"
+
+vertex_ai:
+  experiment_name: "fraud-detection-v1"
+  training_job_name: "fraud-xgboost-training"
+  machine_type: "n1-standard-4"
+  model_display_name: "fraud-detection-xgboost"
+  model_description: "XGBoost model for real-time fraud detection"
+  endpoint_display_name: "fraud-detection-endpoint"
+  min_replica_count: 1
+  max_replica_count: 5
+  serving_machine_type: "n1-standard-2"
+  monitoring_job_name: "fraud-model-monitoring"
+  monitoring_interval_hours: 1
+  skew_threshold: 0.3
+  drift_threshold: 0.3
+
+model:
+  n_estimators: 500
+  max_depth: 6
+  learning_rate: 0.05
+  subsample: 0.8
+  colsample_bytree: 0.8
+  min_child_weight: 1
+  scale_pos_weight: 99
+  eval_metric: "aucpr"
+  early_stopping_rounds: 50
+  fraud_threshold: 0.3
+
+features:
+  velocity_windows_minutes: [1, 5, 15, 60, 1440]
+  numerical_features:
+    - "amount"
+    - "amount_mean_1h"
+    - "amount_std_1h"
+    - "tx_count_1h"
+    - "tx_count_24h"
+    - "amount_deviation"
+    - "hour_of_day"
+    - "day_of_week"
+    - "days_since_last_tx"
+    - "merchant_risk_score"
+    - "distance_from_home"
+  categorical_features:
+    - "merchant_category"
+    - "card_type"
+    - "transaction_channel"
+
+dataflow:
+  job_name: "fraud-realtime-pipeline"
+  runner: "DirectRunner"
+  num_workers: 2
+  max_num_workers: 10
+  disk_size_gb: 50
+  window_size_seconds: 300
+  allowed_lateness_seconds: 60
+
+alerting:
+  notification_email: "Kanchan9chauhan@gmail.com"
+  high_fraud_rate_threshold: 0.05
+  model_latency_p99_ms: 200
+  pipeline_error_rate: 0.01
